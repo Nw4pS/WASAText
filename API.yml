@@ -17,10 +17,6 @@ components:
           description: the path of the profile picture
           type: string
           example: /home/Mario/Pictures/img.png
-        conversations:
-          description: list of conversation that the user can access
-          type: array
-          example: [conversation1,conversation2,...,conversationN,]
 
     conversation:
       description: a single active conversation (2 users or a group)
@@ -49,17 +45,50 @@ components:
               description: preview of the text or an icon for the conversation
               type: string
               example: good evening professor, how...
+
+    message:
+      description: a message is a content that a user sent in a conversation
+      type: object
+      properties:
+        timestamp:
+          description: time of when the message was sent
+          type: string
+          example: 12:09
+        content:
+          description: cocntent of the message, it can be a text, an image or a gif
+          type: string
+          example: hello world!
+        author:
+          description: the name of who sent the message
+          type: string
+          example: Mario
+        status:
+          description:
+            there are two possible status of the message
+            1) message arrived, that will be dispplayed with 1 checkmark
+            2) message seen, that will be dispplayed with 2 checkmarks
+          type: string
+          enum: ["✓","✓✓"]
+          example: ✓
+        reaction:
+          description: a response to the message
+          type: object
+          properties: 
+            comment:
+              description: a text message in response to a message
+              type: string
+              example: ermh... actually
+            name:
+              description: the name of the author
+              type: string
+              example: Luigi
             
-                
-
-
-
-            
-
-
-            
-
-
+    conversationList:
+      description: the list of conversations
+      type: array
+      items:
+        name: conversation
+        $ref: "#/components/schemas/conversation"
 
 
 
