@@ -19,11 +19,19 @@ components:
           example: /home/Mario/Pictures/img.png
 
     conversation:
-      description: a single active conversation (2 users or a group)
+      description: a single active conversation
       type: object
       properties:
+        id:
+          description:
+            an identifier of a conversation
+          type: string
+          example: "ab27v9b8e"
         name:
-          description: name of the conversation
+          description: 
+            name of the conversation (if the conversation is between 2 users
+            the name of the conversation will be the name of the other user, 
+            if it's a group, the name will be a custom name)
           type: string
           example: "Luigi"
         conversationPicture:
@@ -45,6 +53,7 @@ components:
               description: preview of the text or an icon for the conversation
               type: string
               example: good evening professor, how...
+    
 
     message:
       description: a message is a content that a user sent in a conversation
@@ -71,15 +80,15 @@ components:
           enum: ["✓","✓✓"]
           example: ✓
         reaction:
-          description: a response to the message
+          description: a reaction to the message
           type: object
           properties: 
-            comment:
-              description: a text message in response to a message
+            emoji:
+              description: an emoji putted on a message by another user
               type: string
-              example: ermh... actually
-            name:
-              description: the name of the author
+              example: 👍
+            author:
+              description: the author of the reaction
               type: string
               example: Luigi
             
@@ -87,12 +96,42 @@ components:
       description: the list of conversations
       type: array
       items:
-        name: conversation
         $ref: "#/components/schemas/conversation"
 
-
-
 paths:
+
+  /conversations:
+     get:
+        summary: get the list of the conversations
+        description: 
+          the user get the list of all the conversations he has access
+          to.
+        operationId: getMyConversations
+        responses:
+          200:
+            description: user's conversations request succesful
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/conversationList"
+
+#  /conversations/{id}:
+#    get:
+#      summary: get the conversation informations and contents
+#      description:
+#        get the conversation and contents of the conversation
+#        that corresponds to the id
+#      operationId: getConversation
+#      responses:
+#        200:
+#          description: conversation opening succesful
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/conversation"
+#          
+
+
 #inizio parte loginAPI
   /session:
     post:
