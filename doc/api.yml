@@ -115,21 +115,39 @@ paths:
                 schema:
                   $ref: "#/components/schemas/conversationList"
 
-#  /conversations/{id}:
-#    get:
-#      summary: get the conversation informations and contents
-#      description:
-#        get the conversation and contents of the conversation
-#        that corresponds to the id
-#      operationId: getConversation
-#      responses:
-#        200:
-#          description: conversation opening succesful
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/conversation"
-#          
+  /conversations/{id}:
+    get:
+      summary: get the conversation informations and contents
+      description:
+        get the conversation and contents of the conversation
+        that corresponds to the id
+      operationId: getConversation
+      responses:
+        200:
+          description: conversation opening succesful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/conversation"
+
+    post:
+      summary: sends a new message
+      description: 
+        sends a new message in the conversation that corresponds
+        to the id
+      operationId: sendMessage
+      requestBody:
+        description: the message content
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/message"
+      responses:
+        200:
+          description: message sent succesfully
+      
+          
+          
 
 
 #inizio parte loginAPI
