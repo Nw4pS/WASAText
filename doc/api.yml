@@ -79,19 +79,21 @@ components:
           type: string
           enum: ["✓","✓✓"]
           example: ✓
-        reaction:
-          description: a reaction to the message
-          type: object
-          properties: 
-            emoji:
-              description: an emoji putted on a message by another user
-              type: string
-              example: 👍
-            author:
-              description: the author of the reaction
-              type: string
-              example: Luigi
-            
+        reactions:
+          description: a list of the reaction to the message
+          type: array
+          items:
+            type: object
+            properties: 
+              emoji:
+                description: an emoji putted on a message by another user
+                type: string
+                example: [👍,...,👍]
+              author:
+                description: the author of the reaction
+                type: string
+                example: Luigi
+              
     conversationList:
       description: the list of conversations
       type: array
@@ -99,6 +101,25 @@ components:
         $ref: "#/components/schemas/conversation"
 
 paths:
+
+  /account/username:
+    post:
+      summary: change username
+      description: change the user username
+      operationId: setMyUserName
+      responses:
+        '200':
+          description: username changed successfully
+  
+  /account/profilePicture:
+    post:
+      summary: change profile picture
+      description: change the user profile picture
+      operationId: setMyPhoto
+      responses:
+        '200':
+          description: profile picture changed successfully
+  
 
   /conversations:
      get:
@@ -108,8 +129,8 @@ paths:
           to.
         operationId: getMyConversations
         responses:
-          200:
-            description: user's conversations request succesful
+          '200':
+            description: user's conversations requested succesfully
             content:
               application/json:
                 schema:
@@ -123,13 +144,13 @@ paths:
         that corresponds to the id
       operationId: getConversation
       responses:
-        200:
-          description: conversation opening succesful
+        '200':
+          description: conversation opened succesfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/conversation"
-
+                
     post:
       summary: sends a new message
       description: 
@@ -143,11 +164,63 @@ paths:
             schema:
               $ref: "#/components/schemas/message"
       responses:
-        200:
+        '200':
           description: message sent succesfully
-      
-          
-          
+
+  /conversations/{id}/forward:
+    post: 
+      summary: forward a message
+      description: forward an existing message in another conversation
+      operationId: forwardMessage
+      requestBody:
+        description: the message you want to forward
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/message"
+      responses:
+        '200':
+          description: message forwarded succesfully
+    
+  /conversations/{id}/comment:
+    post:
+      summary: comment a message
+      description: comment an already existing message in the conversation
+      operationId: commentMessage
+      requestBody:
+        description: the content of the comment
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/message"
+      responses:
+        '200':
+          description: comment posted successfully
+            
+  /conversation/{id}/reaction:
+    post:
+      summary: react to a message
+      description: an emoji to react to a message
+      operationId: reactMessage
+      requestBody:
+        description: the emoji reaction
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  example: "👍"
+                author:
+                  type: string
+                  example: "Wario"
+      responses:
+        '200':
+          description: reaction added successfully
+
+
+
 
 
 #inizio parte loginAPI
@@ -176,7 +249,7 @@ paths:
           required: true
         responses:
           '201':
-            description: User log-in action successful
+            description: User logged in successfully
             content:
               application/json:
                 schema:
