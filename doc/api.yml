@@ -59,6 +59,10 @@ components:
       description: a message is a content that a user sent in a conversation
       type: object
       properties:
+        id:
+          description: an identifier of the message
+          type: string
+          example: "ab27v9b8e"
         timestamp:
           description: time of when the message was sent
           type: string
@@ -130,7 +134,7 @@ paths:
         operationId: getMyConversations
         responses:
           '200':
-            description: user's conversations requested succesfully
+            description: user's conversations requested successfully
             content:
               application/json:
                 schema:
@@ -145,7 +149,7 @@ paths:
       operationId: getConversation
       responses:
         '200':
-          description: conversation opened succesfully
+          description: conversation opened successfully
           content:
             application/json:
               schema:
@@ -165,7 +169,7 @@ paths:
               $ref: "#/components/schemas/message"
       responses:
         '200':
-          description: message sent succesfully
+          description: message sent successfully
 
   /conversations/{id}/forward:
     post: 
@@ -180,7 +184,7 @@ paths:
               $ref: "#/components/schemas/message"
       responses:
         '200':
-          description: message forwarded succesfully
+          description: message forwarded successfully
     
   /conversations/{id}/comment:
     post:
@@ -196,8 +200,21 @@ paths:
       responses:
         '200':
           description: comment posted successfully
+    
+#    delete: 
+#    summary: delete a comment
+#  description: delete an already existing comment message
+#      #operationId: deleteMessage
+#      requestBody:
+#        description: the commment to delete
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/message"
+              
+
             
-  /conversation/{id}/reaction:
+  /conversations/{id}/reaction:
     post:
       summary: react to a message
       description: an emoji to react to a message
@@ -219,7 +236,62 @@ paths:
         '200':
           description: reaction added successfully
 
+  /conversations/{id}/add:
+    post:
+      summary: add a user
+      description: add a user to the conversation
+      operationId: addToGroup
+      requestBody:
+        description: the username of the user that is wanted to join the conversation
+        content:
+          application/json:
+            schema:
+              type: string
+              example: "Waluigi"
+      responses:
+        '200':
+          description: user added successfully
 
+  /conversations/{id}/leave:
+    delete:
+      summary: leave the conversation
+      description: leave the conversation
+      operationId: leaveGroup
+      responses:
+        '200':
+          description: conversation leaved successfully 
+
+  /conversations/{id}/changePic:
+    post:
+      summary: change conversation picture
+      description: change the conversation's picture that represent the conversation
+      operationId: setGroupPhoto
+      requestBody:
+        description: the image
+        content:
+          application/json:
+            schema:
+              type: string
+              example: /home/Mario/Pictures/img.png
+      responses:
+        '200':
+          description: conversation's picture changed successfully
+  
+  /conversations/{id}/changeName:
+    post:
+      summary: change conversation's name
+      description: change the conversation's name
+      operationId: setGroupName
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              example: "WASAText"
+      responses:
+        '200':
+          description: conversation's name changed successfull,
+        
 
 
 
