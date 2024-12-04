@@ -2,7 +2,23 @@ openapi: '3.0.3'
 info:
   title: WASAText
   version: '0.1'
+
+security:
+
+  - bearerAuth: []
+
 components:
+
+  securitySchemes:
+
+    bearerAuth: 
+
+      type: http
+
+      scheme: bearer
+
+      bearerFormat: JWT
+
   schemas:
     user:
       title: user
