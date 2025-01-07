@@ -1,0 +1,355 @@
+openapi: '3.0.3'
+info:
+  title: WASAText
+  version: '0.1'
+
+security:
+
+  - bearerAuth: []
+
+components:
+
+  securitySchemes:
+
+    bearerAuth:
+
+      type: http
+
+      scheme: bearer
+
+      bearerFormat: JWT
+
+  schemas:
+    user:
+      title: user
+      description: the user
+      type: object
+      properties:
+        username:
+          description: the username of the user
+          type: string
+          example: Mario
+        profilePicture:
+          description: the path of the profile picture
+          type: string
+          example: /home/Mario/Pictures/img.png
+        uid:
+          description: identifier of the user
+          type: string
+          example: dsa%68gh
+
+    conversation:
+      description: a single active conversation
+      type: object
+      properties:
+        id:
+          description:
+            an identifier of a conversation
+          type: string
+          example: "ab27v9b8e"
+        name:
+          description:
+            name of the conversation (if the conversation is between 2 users
+            the name of the conversation will be the name of the other user,
+            if it's a group, the name will be a custom name)
+          type: string
+          example: "Luigi"
+        conversationPicture:
+          description:
+            picture that represent the conversation, if the conversation
+            is between two users, it'll be the other user's profilePicture,
+            if the conversation is a group, it'll be an image chosen by a
+            participant of the group
+          type: string
+          example: /home/Mario/Pictures/img.png
+        latestMessageInfos:
+          description: informations on the latest messages (date, time, preview)
+          properties:
+            date&Time:
+              description: date and time of when the latest message was sent
+              type: string
+              example: 11/09/2001, 08:46
+            preview:
+              description: preview of the text or an icon for the conversation
+              type: string
+              example: good evening professor, how...
+
+
+    message:
+      description: a message is a content that a user sent in a conversation
+      type: object
+      properties:
+        id:
+          description: an identifier of the message
+          type: string
+          example: "ab27v9b8e"
+        timestamp:
+          description: time of when the message was sent
+          type: string
+          example: 12:09
+        content:
+          description: cocntent of the message, it can be a text, an image or a gif
+          type: string
+          example: hello world!
+        author:
+          description: the name of who sent the message
+          type: string
+          example: Mario
+        status:
+          description:
+            there are two possible status of the message
+            1) message arrived, that will be dispplayed with 1 checkmark
+            2) message seen, that will be dispplayed with 2 checkmarks
+          type: string
+          enum: ["✓","✓✓"]
+          example: ✓
+        reactions:
+          description: a list of the reaction to the message
+          type: array
+          items:
+            type: object
+            properties:
+              emoji:
+                description: an emoji putted on a message by another user
+                type: string
+                example: [👍,...,👍]
+              author:
+                description: the author of the reaction
+                type: string
+                example: Luigi
+
+    conversationList:
+      description: the list of conversations
+      type: array
+      items:
+        $ref: "#/components/schemas/conversation"
+
+paths:
+
+  /account/username:
+    post:
+      summary: change username
+      description: change the user username
+      operationId: setMyUserName
+      responses:
+        '200':
+          description: username changed successfully
+
+  /account/profilePicture:
+    post:
+      summary: change profile picture
+      description: change the user profile picture
+      operationId: setMyPhoto
+      responses:
+        '200':
+          description: profile picture changed successfully
+
+
+  /conversations:
+     get:
+        summary: get the list of the conversations
+        description:
+          the user get the list of all the conversations he has access
+          to.
+        operationId: getMyConversations
+        responses:
+          '200':
+            description: user's conversations requested successfully
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/conversationList"
+
+  /conversations/{id}:
+    get:
+      summary: get the conversation informations and contents
+      description:
+        get the conversation and contents of the conversation
+        that corresponds to the id
+      operationId: getConversation
+      responses:
+        '200':
+          description: conversation opened successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/conversation"
+
+    post:
+      summary: sends a new message
+      description:
+        sends a new message in the conversation that corresponds
+        to the id
+      operationId: sendMessage
+      requestBody:
+        description: the message content
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/message"
+      responses:
+        '200':
+          description: message sent successfully
+
+  /conversations/{id}/forward:
+    post:
+      summary: forward a message
+      description: forward an existing message in another conversation
+      operationId: forwardMessage
+      requestBody:
+        description: the message you want to forward
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/message"
+      responses:
+        '200':
+          description: message forwarded successfully
+
+  /conversations/{id}/comment:
+    post:
+      summary: comment a message
+      description: comment an already existing message in the conversation
+      operationId: commentMessage
+      requestBody:
+        description: the content of the comment
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/message"
+      responses:
+        '200':
+          description: comment posted successfully
+
+#    delete:
+#    summary: delete a comment
+#  description: delete an already existing comment message
+#      #operationId: deleteMessage
+#      requestBody:
+#        description: the commment to delete
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/message"
+
+
+
+  /conversations/{id}/reaction:
+    post:
+      summary: react to a message
+      description: an emoji to react to a message
+      operationId: reactMessage
+      requestBody:
+        description: the emoji reaction
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  example: "👍"
+                author:
+                  type: string
+                  example: "Wario"
+      responses:
+        '200':
+          description: reaction added successfully
+
+  /conversations/{id}/add:
+    post:
+      summary: add a user
+      description: add a user to the conversation
+      operationId: addToGroup
+      requestBody:
+        description: the username of the user that is wanted to join the conversation
+        content:
+          application/json:
+            schema:
+              type: string
+              example: "Waluigi"
+      responses:
+        '200':
+          description: user added successfully
+
+  /conversations/{id}/leave:
+    delete:
+      summary: leave the conversation
+      description: leave the conversation
+      operationId: leaveGroup
+      responses:
+        '200':
+          description: conversation leaved successfully
+
+  /conversations/{id}/changePic:
+    post:
+      summary: change conversation picture
+      description: change the conversation's picture that represent the conversation
+      operationId: setGroupPhoto
+      requestBody:
+        description: the image
+        content:
+          application/json:
+            schema:
+              type: string
+              example: /home/Mario/Pictures/img.png
+      responses:
+        '200':
+          description: conversation's picture changed successfully
+
+  /conversations/{id}/changeName:
+    post:
+      summary: change conversation's name
+      description: change the conversation's name
+      operationId: setGroupName
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              example: "WASAText"
+      responses:
+        '200':
+          description: conversation's name changed successfull,
+
+
+
+
+#inizio parte loginAPI
+  /session:
+    post:
+        tags: ["login"]
+        summary: Logs in the user
+        description:
+          If the user does not exist, it will be created,
+          and an identifier is returned.
+          If the user exists, the user identifier is returned.
+        operationId: doLogin
+        requestBody:
+          description: User details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Maria
+                    pattern: 'ˆ.*?$'
+                    minLength: 3
+                    maxLength: 16
+          required: true
+        responses:
+          '201':
+            description: User logged in successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    identifier:
+                    # change here if you decide to use an integer
+                    # or any other type of identifier
+                      type: string
+                      example: "abcdef012345"
+#fine parte loginAPI.
