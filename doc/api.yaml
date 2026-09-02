@@ -7,18 +7,14 @@ info:
   version: 1.0.0
 
 paths:
-# pagina per il login, viene ritornato un identificatore per il bearer auth
   /session:
     post:
       tags: ["login"]
       summary: Logs in the user
-      description: |-
-        If the user does not exist, it will be created,
-        and an identifier is returned.
-        If the user exists, the user identifier is returned.
       operationId: doLogin
       requestBody:
         description: User details
+        required: true
         content:
           application/json:
             schema:
@@ -27,25 +23,50 @@ paths:
                 name:
                   type: string
                   example: Maria
-                  pattern: 'ˆ.*?$'
                   minLength: 3
                   maxLength: 16
-        required: true
       responses:
         '201':
           description: User log-in action successful
           content:
             application/json:
-            schema:
-              type: object
-              properties:
-                identifier:
-                  # change here if you decide to use an integer
-                  # or any other type of identifier
-                  type: string
-                  example: "abcdef012345"
-                  
-# pagina per lo username, è possibile aggiornarlo da qui
+              schema:
+                type: object
+                properties:
+                  identifier:
+                    type: string
+                    example: "abcdef012345"
+
+  /users:
+    get:
+      tags: ["users"]
+      summary: Cerca o elenca utenti
+      operationId: searchUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: username
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista utenti restituita
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    username:
+                      type: string
+                      description: username dell'utente
+                    proPic:
+                      type: string
+                      description: foto profilo dell'utente
+
   /users/me/name:
     put:
       tags: ["users"]
@@ -66,10 +87,438 @@ paths:
               required:
                 - name
       responses:
-        '200':
+        '204':
           description: Nome aggiornato con successo
         '400': 
           $ref: "#/components/responses/BadRequest"
+
+  /users/me/propic:
+    put:
+      tags: ["users"]
+      summary: cambia foto profilo
+      operationId: setMyPhoto
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                picture:
+                  type: string
+              required:
+                - picture
+      responses:
+        '204':
+          description: Foto aggiornata
+
+  /conversations:
+    get:
+      tags: ["conversations"]
+      summary: ricevi lista di conversazioni
+      operationId: getMyConversations
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Conversazioni ritornate con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: id della conversazione (ID utente o ID gruppo)
+                    name:
+                      type: string
+                      description: nome della conversazione (altro utente o gruppo)
+                    picture:
+                      type: string
+                    lastMessageDate:
+                      type: string
+                      format: date-time
+                    lastMessagePreview:
+                      type: string
+                    isGroup:
+                      type: boolean
+    post:
+      tags: ["conversations"]
+      summary: crea o recupera una chat diretta con un utente
+      operationId: createConversation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: l'username dell'utente con cui avviare la chat
+              required:
+                - username
+      responses:
+        '201':
+          description: Conversazione creata o già esistente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: L'ID della conversazione
+
+  /conversations/{id}/messages:
+    get:
+      tags: ["messages"]
+      summary: Ottieni tutti i messaggi di una conversazione
+      operationId: getConversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Messaggi restituiti
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    user:
+                      type: string
+                    conversation:
+                      type: integer
+                    timestamp:
+                      type: string
+                      format: date-time
+                    content:
+                      type: string
+                    isImage:
+                      type: boolean
+                    isForwarded:
+                      type: boolean
+                    isAnswer:
+                      type: boolean
+                    answerTo:
+                      type: integer
+                    isDeleted:
+                      type: boolean
+                    state:
+                      type: string
+                      enum:
+                      - sent
+                      - received
+                      - read
+                    reactions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          user:
+                            type: string
+                          content:
+                            type: string
+                            description: emoji usata per la reazione
+                            example: "👍"
+                            minLength: 1
+                            maxLength: 8
+
+
+
+                  
+
+                  
+
+    post:
+      tags: ["messages"]
+      summary: Invia un messaggio
+      operationId: sendMessage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                isImage:
+                  type: boolean
+                replyTo:
+                  type: integer
+                  description: ID del messaggio a cui si sta rispondendo
+              required:
+                - content
+      responses:
+        '201':
+          description: Messaggio inviato
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: id del messaggio generato
+
+  /conversations/{id}/messages/forward:
+    post:
+      tags: ["messages"]
+      summary: Inoltra un messaggio esistente in questa conversazione
+      operationId: forwardMessage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messageId:
+                  type: integer
+                  description: L'ID del messaggio originale da inoltrare
+              required:
+                - messageId
+      responses:
+        '201':
+          description: Messaggio inoltrato
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: id del messaggio inoltrato
+
+  /messages/{id}:
+    delete:
+      tags: ["messages"]
+      summary: Elimina un messaggio
+      operationId: deleteMessage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Messaggio eliminato
+
+  /messages/{id}/reactions:
+    put:
+      tags: ["messages"]
+      summary: Aggiungi una reazione a un messaggio
+      operationId: commentMessage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emoji:
+                  type: string
+              required:
+                - emoji
+      responses:
+        '204':
+          description: Reazione aggiunta
+    delete:
+      tags: ["messages"]
+      summary: Rimuovi la reazione dal messaggio
+      operationId: uncommentMessage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Reazione rimossa
+
+  /groups:
+    post:
+      tags: ["groups"]
+      summary: Crea un nuovo gruppo
+      operationId: createGroup
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                members:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - name
+      responses:
+        '201':
+          description: Gruppo creato
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: id del gruppo creato
+
+  /groups/{id}/name:
+    put:
+      tags: ["groups"]
+      summary: Imposta nome del gruppo
+      operationId: setGroupName
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '204':
+          description: Nome aggiornato
+
+  /groups/{id}/photo:
+    put:
+      tags: ["groups"]
+      summary: Imposta foto del gruppo
+      operationId: setGroupPhoto
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                picture:
+                  type: string
+              required:
+                - picture
+      responses:
+        '204':
+          description: Foto aggiornata
+
+  /groups/{id}/members:
+    post:
+      tags: ["groups"]
+      summary: Aggiungi un utente al gruppo
+      operationId: addToGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+              required:
+                - username
+      responses:
+        '204':
+          description: Utente aggiunto
+
+  /groups/{id}/members/me:
+    delete:
+      tags: ["groups"]
+      summary: Abbandona il gruppo
+      operationId: leaveGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Uscito dal gruppo con successo
+
 components:
   schemas:
     StatusInfo:
