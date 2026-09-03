@@ -11,6 +11,7 @@ paths:
     post:
       tags: ["login"]
       summary: Logs in the user
+      description: effettua il login tramite l'username, se l'utente non esistesse, verrà creato automaticamente
       operationId: doLogin
       requestBody:
         description: User details
@@ -41,15 +42,16 @@ paths:
     get:
       tags: ["users"]
       summary: Cerca o elenca utenti
+      description: restituisce una lista di utenti, nel caso in cui nella query venga inserito un username, verrà restituito solo l'utente con quell'username
       operationId: searchUsers
       security:
         - BearerAuth: []
       parameters:
-        - name: username
-          in: query
-          required: false
-          schema:
-            type: string
+      - name: username
+        in: query
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           description: Lista utenti restituita
@@ -71,6 +73,7 @@ paths:
     put:
       tags: ["users"]
       summary: Aggiorna il nome utente
+      description: aggiorna l'username con una stringa compresa tra 3 e 16 caratteri. lo username non deve essere già in uso
       operationId: setMyUserName
       security:
         - BearerAuth: []
@@ -96,6 +99,7 @@ paths:
     put:
       tags: ["users"]
       summary: cambia foto profilo
+      description: cambia la foto profilo tramite una stringa codificata in Base64
       operationId: setMyPhoto
       security:
         - BearerAuth: []
@@ -117,6 +121,7 @@ paths:
     get:
       tags: ["conversations"]
       summary: ricevi lista di conversazioni
+      description: ricevi la lista delle conversazioni di gruppo o dirette a cui l'utente ha accesso. Le conversazioni sono ordinate in senso cronologico inverso in base all'ultimo messaggio
       operationId: getMyConversations
       security:
         - BearerAuth: []
@@ -148,6 +153,7 @@ paths:
     post:
       tags: ["conversations"]
       summary: crea o recupera una chat diretta con un utente
+      description: crea o recupera una chat diretta con un utente tramite il suo username, aggiungendo automaticamente la conversazione alla lista di conversazioni
       operationId: createConversation
       security:
         - BearerAuth: []
@@ -176,18 +182,20 @@ paths:
                     description: L'ID della conversazione
 
   /conversations/{id}/messages:
-    get:
-      tags: ["messages"]
-      summary: Ottieni tutti i messaggi di una conversazione
-      operationId: getConversation
-      security:
-        - BearerAuth: []
-      parameters:
+    parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
+    get:
+      tags: ["messages"]
+      summary: Ottieni tutti i messaggi di una conversazione
+      description: ottieni tutti i messaggi della conversazione in ordine cronologico inverso in base all'istante di invio del messaggio.
+      operationId: getConversation
+      security:
+        - BearerAuth: []
+      
       responses:
         '200':
           description: Messaggi restituiti
@@ -240,25 +248,13 @@ paths:
                             example: "👍"
                             minLength: 1
                             maxLength: 8
-
-
-
-                  
-
-                  
-
     post:
       tags: ["messages"]
       summary: Invia un messaggio
+      description: Invia un nuovo messaggio di testo o immagine all'interno della conversazione, include informazioni riguardo a se il messaggio è una risposta ad un messaggio esistente
       operationId: sendMessage
       security:
         - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
       requestBody:
         required: true
         content:
@@ -288,18 +284,19 @@ paths:
                     description: id del messaggio generato
 
   /conversations/{id}/messages/forward:
-    post:
-      tags: ["messages"]
-      summary: Inoltra un messaggio esistente in questa conversazione
-      operationId: forwardMessage
-      security:
-        - BearerAuth: []
-      parameters:
+    parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
+    post:
+      tags: ["messages"]
+      summary: Inoltra un messaggio esistente in questa conversazione
+      description: inoltra un messaggio esistente, esso verrà considerato come un nuovo messaggio, anche se vengono mantenute le informazioni riguardo al messaggio originale
+      operationId: forwardMessage
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -325,44 +322,48 @@ paths:
                     description: id del messaggio inoltrato
 
   /messages/{id}:
-    delete:
-      tags: ["messages"]
-      summary: Elimina un messaggio
-      operationId: deleteMessage
-      security:
-        - BearerAuth: []
-      parameters:
+    parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
+    delete:
+      tags: ["messages"]
+      summary: Elimina un messaggio
+      description: elimina un messaggio inviato solamente se l'utente che richiede l'eliminazione è lo stesso che ha inviato il messaggio
+      operationId: deleteMessage
+      security:
+        - BearerAuth: []
       responses:
         '204':
           description: Messaggio eliminato
 
   /messages/{id}/reactions:
-    put:
-      tags: ["messages"]
-      summary: Aggiungi una reazione a un messaggio
-      operationId: commentMessage
-      security:
-        - BearerAuth: []
-      parameters:
+    parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
+    put:
+      tags: ["messages"]
+      summary: Aggiungi una reazione a un messaggio
+      description: aggiunge una reaction ad un messaggio, la reaction è una stringa rappresentante un emoji
+      operationId: commentMessage
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                emoji:
-                  type: string
+              type: string
+              emoji:
+                description: emoji usata per la reazione
+                example: "👍"
+                minLength: 1
+                maxLength: 8
               required:
                 - emoji
       responses:
@@ -371,15 +372,10 @@ paths:
     delete:
       tags: ["messages"]
       summary: Rimuovi la reazione dal messaggio
+      description: rimuove la reaction al messaggio
       operationId: uncommentMessage
       security:
         - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
       responses:
         '204':
           description: Reazione rimossa
@@ -388,6 +384,7 @@ paths:
     post:
       tags: ["groups"]
       summary: Crea un nuovo gruppo
+      description: crea un nuovo gruppo includendo un qualsiasi numero di utenti maggiore o uguale a uno, compreso l'utente che ha creato il gruppo
       operationId: createGroup
       security:
         - BearerAuth: []
@@ -419,18 +416,19 @@ paths:
                     description: id del gruppo creato
 
   /groups/{id}/name:
-    put:
-      tags: ["groups"]
-      summary: Imposta nome del gruppo
-      operationId: setGroupName
-      security:
-        - BearerAuth: []
-      parameters:
+    parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
+    put:
+      tags: ["groups"]
+      summary: modifica il nome del gruppo
+      description: modifica il nome di un gruppo esistente
+      operationId: setGroupName
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -447,18 +445,19 @@ paths:
           description: Nome aggiornato
 
   /groups/{id}/photo:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
     put:
       tags: ["groups"]
       summary: Imposta foto del gruppo
+      description: modifica la foto che rappresenta la conversazione di gruppo, utilizza una stringa in Base64
       operationId: setGroupPhoto
       security:
         - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
       requestBody:
         required: true
         content:
@@ -475,18 +474,19 @@ paths:
           description: Foto aggiornata
 
   /groups/{id}/members:
-    post:
-      tags: ["groups"]
-      summary: Aggiungi un utente al gruppo
-      operationId: addToGroup
-      security:
-        - BearerAuth: []
-      parameters:
+    parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
+    post:
+      tags: ["groups"]
+      summary: Aggiungi un utente al gruppo
+      description: aggiunge un utente al gruppo, solo i membri del gruppo possono aggiungere altri utenti
+      operationId: addToGroup
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -503,18 +503,19 @@ paths:
           description: Utente aggiunto
 
   /groups/{id}/members/me:
-    delete:
-      tags: ["groups"]
-      summary: Abbandona il gruppo
-      operationId: leaveGroup
-      security:
-        - BearerAuth: []
-      parameters:
+    parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
+    delete:
+      tags: ["groups"]
+      summary: Abbandona il gruppo
+      description: permette all'utente di abbandonare il gruppo
+      operationId: leaveGroup
+      security:
+        - BearerAuth: []
       responses:
         '204':
           description: Uscito dal gruppo con successo
