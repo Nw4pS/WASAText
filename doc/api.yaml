@@ -78,6 +78,7 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -104,6 +105,7 @@ paths:
       security:
         - BearerAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -358,12 +360,13 @@ paths:
         content:
           application/json:
             schema:
-              type: string
-              emoji:
-                description: emoji usata per la reazione
-                example: "👍"
-                minLength: 1
-                maxLength: 8
+              type: object
+              properties:
+                emoji:
+                  description: emoji usata per la reazione
+                  example: "👍"
+                  minLength: 1
+                  maxLength: 8
               required:
                 - emoji
       responses:
