@@ -222,10 +222,9 @@ paths:
                     isImage:
                       type: boolean
                     isForwarded:
-                      type: boolean
-                    isAnswer:
-                      type: boolean
+                      type: booleanì
                     answerTo:
+                      description: id del messaggio a cui questo messaggio risponde
                       type: integer
                     isDeleted:
                       type: boolean

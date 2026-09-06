@@ -36,7 +36,7 @@ import (
 	"fmt"
 )
 
-// AppDatabase is the high level interface for the DB
+// AppDatabase is the high level interface for the DB, qui vengono specificati i metodi che il database dovrà avere
 type AppDatabase interface {
 	GetName() (string, error)
 	SetName(name string) error
@@ -51,15 +51,61 @@ type appdbimpl struct {
 // New returns a new instance of AppDatabase based on the SQLite connection `db`.
 // `db` is required - an error will be returned if `db` is `nil`.
 func New(db *sql.DB) (AppDatabase, error) {
-	if db == nil {
+	if db == nil { //se l'oggetto che dovrebbe rappresentare il database è vuoto:
 		return nil, errors.New("database is required when building a AppDatabase")
 	}
 
-	// Check if table exists. If not, the database is empty, and we need to create the structure
+	// se il database non è vuvoto: Check if table exists. If not, the database is empty, and we need to create the structure
 	var tableName string
 	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
-	if errors.Is(err, sql.ErrNoRows) {
-		sqlStmt := `CREATE TABLE example_table (id INTEGER NOT NULL PRIMARY KEY, name TEXT);`
+	if errors.Is(err, sql.ErrNoRows) { // il database è vuoto
+		sqlStmt := `CREATE TABLE IF NOT EXISTS utenti (
+							username TEXT PRIMARY KEY,
+							proPic TEXT);
+					CREATE TABLE IF NOT EXISTS conversazioni (
+							id INTEGER PRIMARY KEY AUTOINCREMENT);
+					CREATE TABLE IF NOT EXISTS diretti(
+							id INTEGER PRIMARY KEY,
+							FOREIGN KEY (id) REFERENCES conversazione(id) ON DELETE CASCADE);
+					CREATE TABLE IF NOT EXISTS gruppi(
+							nome TEXT NOT NULL,
+							groupPic TEXT,
+							id INTEGER PRIMARY KEY,
+							FOREIGN KEY (id) REFERENCES conversazione(id) ON DELETE CASCADE);
+					CREATE TABLE IF NOT EXISTS messaggi(
+							utente TEXT NOT NULL,
+							conversazione INTEGER NOT NULL,
+							istante TEXT NOT NULL,
+							contenuto TEXT NOT NULL,
+							is_immagine INT NOT NULL,
+							is_inoltrato INT NOT NULL,
+							is_eliminato INT NOT NULL,
+							risposta_a INT,
+							stato TEXT CHECK( stato IN ('inviato','ricevuto','letto')) NOT NULL DEFAULT 'inviato',
+							id INT NOT NULL,
+							FOREIGN KEY(utente) REFERENCES utenti(username),
+							FOREIGN KEY(conversazione) REFERENCES conversazioni(id),
+							FOREIGN KEY (risposta_a) REFERENCES messaggi(id),
+							);
+					CREATE TABLE IF NOT EXISTS reaction(
+							utente TEXT NOT NULL),
+							messaggio INTEGER NOT NULL,
+							contenuto TEXT NOT NULL CHECK(length(emoji) >= 1 AND length(emoji) <= 8),
+							id INT NOT NULL,
+							FOREIGN KEY(utente) REFERENCES utenti(username),
+							FOREIGN KEY(messaggio) REFERENCES messaggi(id),
+							);
+					CREATE TABLE IF NOT EXISTS ut_grup (
+							utente TEXT NOT NULL,
+							gruppo TEXT NOT NULL,
+							FOREIGN KEY (utente) REFERENCES utenti(username),
+							FOREIGN KEY (gruppo) REFERENCES gruppi(id));
+					CREATE TABLE IF NOT EXISTS ut_dir(
+							utente TEXT NOT NULL,
+							diretto INTEGER NOT NULL,
+							FOREIGN KEY (utente) REFERENCES utenti(username),
+							FOREIGN KEY (diretto) REFERENCES diretti(id))
+					)`
 		_, err = db.Exec(sqlStmt)
 		if err != nil {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
