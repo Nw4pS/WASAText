@@ -10,6 +10,8 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/", rt.getHelloWorld)
 	rt.router.GET("/context", rt.wrap(rt.getContextReply))
 
+	// login route
+	rt.router.POST("/session", rt.wrap(rt.doLogin))
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
 
