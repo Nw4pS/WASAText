@@ -16,15 +16,15 @@ type LoginRequest struct {
 
 // LoginResponse mappa la risposta contenente l'identificatore
 type LoginResponse struct {
-	Identifier string `json:"identifier"`
+	Identifier string `json:"identifier"` //quando nel json analizzato si legge identifier: valore, il valore andrà all'interno di questa variabile identifier
 }
 
 // doLogin è l'handler dell'endpoint POST /session.
 func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	var req LoginRequest
+	var req LoginRequest //l'oggetto che definisce i valori della richiesta del json che vogliamo viene salvato in req
 
 	// decodifica il body della richiesta, risponde con 400 se il JSON è malformato
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { //json.newdecoder decodifica il json del body nella struttura salvata in req
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -36,7 +36,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	// delega al livello database la logica di business.
+	// chiama la funzione nell'interfaccia del database
 	identifier, err := rt.db.DoLogin(name)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Errore del database durante il doLogin")

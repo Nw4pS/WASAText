@@ -1,27 +1,43 @@
 package database
 
-// crea utente
-func (db *appdbimpl) CreateUser(username string) error {
-	_, err := db.c.Exec("INSERT INTO utente (username) VALUES (?)", username)
-	return err
+import (
+	"database/sql"
+)
+
+type User struct {
+	Username string `json:"username"`
+	ProPic   string `json:"proPic"`
 }
 
-// aggiorna foto profilo
-func (db *appdbimpl) UpdatePropic(username string, proPic string) error {
-	_, err := db.c.Exec("UPDATE utenti SET proPic=? WHERE username=?", proPic, username)
-	return err
-}
+func (db *appdbimpl) SearchUsers(username string) ([]User, error) {
+	var rows *sql.Rows
+	var err error
 
-// lista gli username di tutti gli utenti di wasatext
-func (db *appdbimpl) ListUsernames() ([]string, error) {
-	var usernameList []string
-	sqlRows, err := db.c.Query("SELECT username FROM utenti")
-	for sqlRows.Next() {
-		var username string
-		if err := sqlRows.Scan(&username); err != nil {
+	if username == "" {
+		rows, err = db.c.Query("SELECT username, COALESCE(proPic,'') FROM utenti ORDER BY username ASC")
+	} else {
+		rows, err = db.c.Query("SELECT username, COALESCE(proPic,'') FROM utenti WHERE username = ?", username)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	users := make([]User, 0)
+
+	for rows.Next() {
+		var u User
+
+		if err := rows.Scan(&u.Username, &u.ProPic); err != nil {
 			return nil, err
 		}
-		usernameList = append(usernameList, username)
+		users = append(users, u)
 	}
-	return usernameList, err
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

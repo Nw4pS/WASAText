@@ -41,6 +41,20 @@ type AppDatabase interface {
 	GetName() (string, error)
 	SetName(name string) error
 	DoLogin(username string) (string, error)
+	SearchUsers(username string) ([]User, error)
+	SetPropic(identifier string, ProPic string) error
+	CreateConversation(identifier string, username string) (int, error)
+	CreateGroup(identifier string, name string, members []string) (int, error)
+	AddToGroup(requesterID string, groupID int, targetUsernames []string) error
+	GetGroupMembers(requesterID string, groupID int) ([]string, error)
+	LeaveGroup(userID string, groupID int) error
+	SetGroupPhoto(requesterID string, groupID int, photo string) error
+	SendMessage(req SendMessageRequest) (int, error)
+	ForwardMessage(requesterID string, destConvID int, origMessageID int) (int, error)
+	DeleteMessage(requesterID string, messageID int) error
+	AddReaction(requesterID string, messageID int, emoji string) error
+	SetMyUsername(requesterID string, newUsername string) error
+	GetMyConversations(requesterID string) ([]ConversationPreview, error)
 	Ping() error
 }
 
@@ -59,25 +73,25 @@ func New(db *sql.DB) (AppDatabase, error) {
 	var tableName string
 	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) { // il database è vuoto
-		sqlStmt := `CREATE TABLE IF NOT EXISTS utenti (
+		sqlStmt := `CREATE TABLE IF NOT EXISTS Utenti (
 							id TEXT PRIMARY KEY,
 							username TEXT UNIQUE,
 							proPic TEXT
 							);
-					CREATE TABLE IF NOT EXISTS conversazioni (
+					CREATE TABLE IF NOT EXISTS Conversazioni (
 							id INTEGER PRIMARY KEY AUTOINCREMENT
 							);
-					CREATE TABLE IF NOT EXISTS diretti(
+					CREATE TABLE IF NOT EXISTS Diretti(
 							id INTEGER PRIMARY KEY,
-							FOREIGN KEY (id) REFERENCES conversazioni(id) ON DELETE CASCADE
+							FOREIGN KEY (id) REFERENCES Conversazioni(id) ON DELETE CASCADE
 							);
-					CREATE TABLE IF NOT EXISTS gruppi(
+					CREATE TABLE IF NOT EXISTS Gruppi(
 							nome TEXT NOT NULL,
 							groupPic TEXT,
 							id INTEGER PRIMARY KEY,
-							FOREIGN KEY (id) REFERENCES conversazioni(id) ON DELETE CASCADE
+							FOREIGN KEY (id) REFERENCES Conversazioni(id) ON DELETE CASCADE
 							);
-					CREATE TABLE IF NOT EXISTS messaggi(
+					CREATE TABLE IF NOT EXISTS Messaggi(
 							utente TEXT NOT NULL,
 							conversazione INTEGER NOT NULL,
 							istante TEXT NOT NULL,
@@ -88,83 +102,83 @@ func New(db *sql.DB) (AppDatabase, error) {
 							risposta_a INTEGER,
 							stato TEXT CHECK( stato IN ('sent','received','read')) NOT NULL DEFAULT 'sent',
 							id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-							FOREIGN KEY(utente) REFERENCES utenti(id),
-							FOREIGN KEY(conversazione) REFERENCES conversazioni(id),
-							FOREIGN KEY (risposta_a) REFERENCES messaggi(id)
+							FOREIGN KEY(utente) REFERENCES Utenti(id),
+							FOREIGN KEY(conversazione) REFERENCES Conversazioni(id),
+							FOREIGN KEY (risposta_a) REFERENCES Messaggi(id)
 							);
-					CREATE TABLE IF NOT EXISTS reaction(
+					CREATE TABLE IF NOT EXISTS Reaction(
 							utente TEXT NOT NULL,
 							messaggio INTEGER NOT NULL,
 							contenuto TEXT NOT NULL CHECK(length(contenuto) >= 1 AND length(contenuto) <= 8),
 							id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-							FOREIGN KEY(utente) REFERENCES utenti(id),
-							FOREIGN KEY(messaggio) REFERENCES messaggi(id)
+							FOREIGN KEY(utente) REFERENCES Utenti(id),
+							FOREIGN KEY(Messaggio) REFERENCES Messaggi(id)
 							);
-					CREATE TABLE IF NOT EXISTS ut_grup (
+					CREATE TABLE IF NOT EXISTS Ut_grup (
 							utente TEXT NOT NULL,
 							gruppo INTEGER NOT NULL,
 							PRIMARY KEY(utente,gruppo),
-							FOREIGN KEY (utente) REFERENCES utenti(id),
-							FOREIGN KEY (gruppo) REFERENCES gruppi(id)
+							FOREIGN KEY (utente) REFERENCES Utenti(id),
+							FOREIGN KEY (gruppo) REFERENCES Gruppi(id)
 							);
-					CREATE TABLE IF NOT EXISTS ut_dir(
+					CREATE TABLE IF NOT EXISTS Ut_dir(
 							utente TEXT NOT NULL,
 							diretto INTEGER NOT NULL,
 							PRIMARY KEY(utente,diretto),
-							FOREIGN KEY (utente) REFERENCES utenti(id),
-							FOREIGN KEY (diretto) REFERENCES diretti(id)
+							FOREIGN KEY (utente) REFERENCES Utenti(id),
+							FOREIGN KEY (diretto) REFERENCES Diretti(id)
 							);
 					
 					CREATE TRIGGER IF NOT EXISTS trg_prevent_duplicate_id_group
-						BEFORE INSERT ON gruppi
+						BEFORE INSERT ON Gruppi
 						FOR EACH ROW
-						WHEN EXISTS (SELECT 1 FROM diretti WHERE id = NEW.id)
+						WHEN EXISTS (SELECT 1 FROM Diretti WHERE id = NEW.id)
 						BEGIN
 						    SELECT RAISE(ABORT, 'Questo ID conversazione è già utilizzato per una chat diretta.');
 						END;
 					
 					CREATE TRIGGER IF NOT EXISTS trg_prevent_duplicate_id_direct
-						BEFORE INSERT ON diretti
+						BEFORE INSERT ON Diretti
 						FOR EACH ROW
-						WHEN EXISTS (SELECT 1 FROM gruppi WHERE id = NEW.id)
+						WHEN EXISTS (SELECT 1 FROM Gruppi WHERE id = NEW.id)
 						BEGIN
 						    SELECT RAISE(ABORT, 'Questo ID conversazione è già utilizzato per un gruppo.');
 						END;
 
-					CREATE TRIGGER IF NOT EXISTS trg_limit_ut_dir_insert
-						BEFORE INSERT ON ut_dir
+					CREATE TRIGGER IF NOT EXISTS trg_limit_Ut_dir_insert
+						BEFORE INSERT ON Ut_dir
 						FOR EACH ROW
-						WHEN (SELECT COUNT(*) FROM ut_dir WHERE diretto = NEW.diretto) >= 2
+						WHEN (SELECT COUNT(*) FROM Ut_dir WHERE diretto = NEW.diretto) >= 2
 						BEGIN
-						    SELECT RAISE(ABORT, 'Una conversazione diretta non può avere più di due utenti.');
+						    SELECT RAISE(ABORT, 'Una conversazione diretta non può avere più di due Utenti.');
 						END;
-					CREATE TRIGGER IF NOT EXISTS trg_prevent_ut_dir_delete
-						BEFORE DELETE ON ut_dir
+					CREATE TRIGGER IF NOT EXISTS trg_prevent_Ut_dir_delete
+						BEFORE DELETE ON Ut_dir
 						FOR EACH ROW
 						BEGIN
-							SELECT RAISE(ABORT, 'Non è permesso rimuovere utenti da una conversazione diretta.');
+							SELECT RAISE(ABORT, 'Non è permesso rimuovere Utenti da una conversazione diretta.');
 						END;
 					
 					CREATE TRIGGER IF NOT EXISTS trg_prevent_empty_group
-						BEFORE DELETE ON ut_grup
+						BEFORE DELETE ON Ut_grup
 						FOR EACH ROW
-						WHEN (SELECT COUNT(*) FROM ut_grup WHERE gruppo = OLD.gruppo) <= 1
+						WHEN (SELECT COUNT(*) FROM Ut_grup WHERE gruppo = OLD.gruppo) <= 1
 						BEGIN
 							SELECT RAISE(ABORT, 'Un gruppo deve avere almeno un utente associato.');
 						END;
 					
 					CREATE TRIGGER IF NOT EXISTS trg_cascade_delete_gruppo_to_conv
-						AFTER DELETE ON gruppi
+						AFTER DELETE ON Gruppi
 						FOR EACH ROW
 						BEGIN
-						    DELETE FROM conversazioni WHERE id = OLD.id;
+						    DELETE FROM Conversazioni WHERE id = OLD.id;
 						END;
 					
 					CREATE TRIGGER IF NOT EXISTS trg_cascade_delete_diretto_to_conv
-						AFTER DELETE ON diretti
+						AFTER DELETE ON Diretti
 						FOR EACH ROW
 						BEGIN
-							DELETE FROM conversazioni WHERE id = OLD.id;
+							DELETE FROM Conversazioni WHERE id = OLD.id;
 						END;
 					`
 		_, err = db.Exec(sqlStmt)
