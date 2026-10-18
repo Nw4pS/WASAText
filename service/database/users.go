@@ -16,7 +16,7 @@ func (db *appdbimpl) SearchUsers(username string) ([]User, error) {
 	if username == "" {
 		rows, err = db.c.Query("SELECT username, COALESCE(proPic,'') FROM utenti ORDER BY username ASC")
 	} else {
-		rows, err = db.c.Query("SELECT username, COALESCE(proPic,'') FROM utenti WHERE username = ?", username)
+		rows, err = db.c.Query("SELECT username, COALESCE(proPic,'') FROM utenti WHERE username LIKE ? ORDER BY username ASC", "%"+username+"%")
 	}
 
 	if err != nil {
