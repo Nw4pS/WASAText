@@ -32,20 +32,20 @@ func (db *appdbimpl) CreateGroup(identifier string, name string, members []strin
 	// creo la tupla base nella tabella Conversazioni per generare l'id condiviso
 	res, err := tx.Exec("INSERT INTO Conversazioni DEFAULT VALUES")
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, err
 	}
 
 	groupID, err := res.LastInsertId()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, err
 	}
 
 	// creo il gruppo
 	_, err = tx.Exec("INSERT INTO Gruppi (id, nome) VALUES (?, ?)", groupID, name)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, err
 	}
 
@@ -53,7 +53,7 @@ func (db *appdbimpl) CreateGroup(identifier string, name string, members []strin
 	for userID := range userIDsMap {
 		_, err = tx.Exec("INSERT INTO Ut_grup (utente, gruppo) VALUES (?, ?)", userID, groupID)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return 0, err
 		}
 	}

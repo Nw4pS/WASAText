@@ -19,11 +19,11 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.PUT("/users/me/propic", rt.wrap(rt.setMyPhoto))
 	// crea conversazione diretta
 	rt.router.POST("/conversations", rt.wrap(rt.createConversation))
-	//crea gruppo
+	// crea gruppo
 	rt.router.POST("/groups", rt.wrap(rt.createGroup))
 	// get conversations
 	rt.router.GET("/conversations", rt.wrap(rt.getMyConversations))
-	//aggiungi al gruppo
+	// aggiungi al gruppo
 	rt.router.POST("/groups/:id/members", rt.wrap(rt.addToGroup))
 	// lista i membri del gruppo
 	rt.router.GET("/groups/:id/members", rt.wrap(rt.getGroupMembers))
@@ -31,14 +31,18 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.DELETE("/groups/:id/members/me", rt.wrap(rt.leaveGroup))
 	// imposta foto gruppo
 	rt.router.PUT("/groups/:id/photo", rt.wrap(rt.setGroupPhoto))
+	// imposta nome del gruppo
+	rt.router.PUT("/groups/:id/name", rt.wrap(rt.setGroupName))
 	// invia messaggio
 	rt.router.POST("/conversations/:id/messages", rt.wrap(rt.sendMessage))
 	// elimina messaggio
-	rt.router.DELETE("/messages/{id}", rt.wrap(rt.deleteMessage))
+	rt.router.DELETE("/messages/:id", rt.wrap(rt.deleteMessage))
 	// inoltra un messaggio
 	rt.router.POST("/conversations/:id/messages/forward", rt.wrap(rt.forwardMessage))
 	// aggiungi reaction
 	rt.router.PUT("/messages/:id/reactions", rt.wrap(rt.addReaction))
+	// ricevi i messaggi di una conversazione
+	rt.router.GET("/conversations/:id/messages", rt.wrap(rt.getConversation))
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
 

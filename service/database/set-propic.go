@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// SetPropic (o SetMyPhoto) aggiorna la foto profilo
 func (db *appdbimpl) SetPropic(identifier string, proPic string) error {
 	res, err := db.c.Exec("UPDATE Utenti SET proPic = ? WHERE id = ?", proPic, identifier)
 	if err != nil {
@@ -18,7 +17,7 @@ func (db *appdbimpl) SetPropic(identifier string, proPic string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		//nessuna tupla è stata modificata
+		// nessuna tupla è stata modificata
 		return sql.ErrNoRows
 	}
 

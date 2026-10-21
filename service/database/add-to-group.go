@@ -35,7 +35,7 @@ func (db *appdbimpl) AddToGroup(requesterID string, groupID int, targetUsernames
 		var targetUserID string
 		err = tx.QueryRow("SELECT id FROM Utenti WHERE username = ?", username).Scan(&targetUserID)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			if errors.Is(err, sql.ErrNoRows) {
 				return fmt.Errorf("utente membro non trovato: %s", username)
 			}
@@ -46,18 +46,18 @@ func (db *appdbimpl) AddToGroup(requesterID string, groupID int, targetUsernames
 		var alreadyInGroup int
 		err = tx.QueryRow("SELECT COUNT(*) FROM Ut_grup WHERE utente = ? AND gruppo = ?", targetUserID, groupID).Scan(&alreadyInGroup)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return fmt.Errorf("errore nel controllo appartenenza per %s: %w", username, err)
 		}
 		if alreadyInGroup > 0 {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return fmt.Errorf("l'utente %s fa già parte di questo gruppo", username)
 		}
 
 		// si inserisce l'utente nel gruppo
 		_, err = tx.Exec("INSERT INTO Ut_grup (utente, gruppo) VALUES (?, ?)", targetUserID, groupID)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return fmt.Errorf("errore durante l'aggiunta dell'utente %s al gruppo: %w", username, err)
 		}
 	}

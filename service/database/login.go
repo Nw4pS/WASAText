@@ -26,7 +26,7 @@ func (db *appdbimpl) DoLogin(username string) (string, error) {
 		return "", fmt.Errorf("errore durante la ricerca dell'utente: %w", err)
 	}
 
-	//l'utente non esiste, quindi genera un nuovo UUIDv4 per l'identificatore
+	// l'utente non esiste, quindi genera un nuovo UUIDv4 per l'identificatore
 	u, err := uuid.NewV4()
 	if err != nil {
 		return "", fmt.Errorf("errore nella generazione dell'UUID: %w", err)
