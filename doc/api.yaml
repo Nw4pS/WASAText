@@ -482,6 +482,27 @@ paths:
           required: true
           schema:
             type: integer
+    get:
+      tags: ["groups"]
+      summary: lista i membri del gruppo
+      description: restituisce la lista degli username dei membri del gruppo. Solo gli utenti che fanno già parte del gruppo possono vedere i partecipanti
+      operationId: getGroupMembers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista dei membri restituita con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: "Maria"
+        '403':
+          description: operazione negata, l'utente non fa parte del gruppo
+        '401':
+          $ref: "#/components/responses/Unauthorized"
     post:
       tags: ["groups"]
       summary: Aggiungi un utente al gruppo
@@ -496,10 +517,12 @@ paths:
             schema:
               type: object
               properties:
-                username:
-                  type: string
+                usernames:
+                  type: array
+                  items:
+                    type: string
               required:
-                - username
+                - usernames
       responses:
         '204':
           description: Utente aggiunto

@@ -41,6 +41,8 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.POST("/conversations/:id/messages/forward", rt.wrap(rt.forwardMessage))
 	// aggiungi reaction
 	rt.router.PUT("/messages/:id/reactions", rt.wrap(rt.addReaction))
+	// rimuovi reazione
+	rt.router.DELETE("/messages/:id/reactions", rt.wrap(rt.deleteReaction))
 	// ricevi i messaggi di una conversazione
 	rt.router.GET("/conversations/:id/messages", rt.wrap(rt.getConversation))
 	// Special routes
