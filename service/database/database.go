@@ -53,6 +53,7 @@ type AppDatabase interface {
 	ForwardMessage(requesterID string, destConvID int, origMessageID int) (int, error)
 	DeleteMessage(requesterID string, messageID int) error
 	AddReaction(requesterID string, messageID int, emoji string) error
+	DeleteReaction(requesterID string, messageID int) error
 	SetMyUsername(requesterID string, newUsername string) error
 	GetMyConversations(requesterID string) ([]ConversationPreview, error)
 	GetConversation(requesterID string, convID int) ([]Message, error)
