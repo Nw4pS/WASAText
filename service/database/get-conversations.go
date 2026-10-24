@@ -1,6 +1,6 @@
 package database
 
-// ConversationPreview modella la riga restituita dal DB per l'elenco chat
+// ConversationPreview modella la riga restituita dal DB per l'elenco chat.
 type ConversationPreview struct {
 	ID                 int
 	Name               string
@@ -12,46 +12,46 @@ type ConversationPreview struct {
 
 func (db *appdbimpl) GetMyConversations(requesterID string) ([]ConversationPreview, error) {
 	query := `
-	WITH UltimeConversazioni AS (
-		SELECT 
-			d.id AS conv_id,
-			u_other.username AS conv_name,
-			COALESCE(u_other.proPic, '') AS conv_pic,
-			0 AS is_group
-		FROM Ut_dir my_dir
-		JOIN Diretti d ON d.id = my_dir.diretto
-		JOIN Ut_dir other_dir ON other_dir.diretto = d.id AND other_dir.utente != my_dir.utente
-		JOIN Utenti u_other ON u_other.id = other_dir.utente
-		WHERE my_dir.utente = ?
+    WITH UltimeConversazioni AS (
+        SELECT 
+            d.id AS conv_id,
+            u_other.username AS conv_name,
+            COALESCE(u_other.proPic, '') AS conv_pic,
+            0 AS is_group
+        FROM Ut_dir my_dir
+        JOIN Diretti d ON d.id = my_dir.diretto
+        JOIN Ut_dir other_dir ON other_dir.diretto = d.id AND other_dir.utente != my_dir.utente
+        JOIN Utenti u_other ON u_other.id = other_dir.utente
+        WHERE my_dir.utente = ?
 
-		UNION ALL
+        UNION ALL
 
-		SELECT 
-			g.id AS conv_id,
-			g.nome AS conv_name,
-			COALESCE(g.groupPic, '') AS conv_pic,
-			1 AS is_group
-		FROM Ut_grup ug
-		JOIN Gruppi g ON g.id = ug.gruppo
-		WHERE ug.utente = ?
-	)
-	SELECT 
-		c.conv_id,
-		c.conv_name,
-		c.conv_pic,
-		c.is_group,
-		COALESCE(m.istante, ''),
-		COALESCE(m.contenuto, ''),
-		COALESCE(m.is_immagine, 0),
-		COALESCE(m.is_eliminato, 0)
-	FROM UltimeConversazioni c
-	LEFT JOIN Messaggi m ON m.id = (
-		SELECT id FROM Messaggi 
-		WHERE conversazione = c.conv_id 
-		ORDER BY istante DESC, id DESC 
-		LIMIT 1
-	)
-	ORDER BY COALESCE(m.istante, '') DESC;`
+        SELECT 
+            g.id AS conv_id,
+            g.nome AS conv_name,
+            COALESCE(g.groupPic, '') AS conv_pic,
+            1 AS is_group
+        FROM Ut_grup ug
+        JOIN Gruppi g ON g.id = ug.gruppo
+        WHERE ug.utente = ?
+    )
+    SELECT 
+        c.conv_id,
+        c.conv_name,
+        c.conv_pic,
+        c.is_group,
+        COALESCE(m.istante, ''),
+        COALESCE(m.contenuto, ''),
+        COALESCE(m.is_immagine, 0),
+        COALESCE(m.is_eliminato, 0)
+    FROM UltimeConversazioni c
+    LEFT JOIN Messaggi m ON m.id = (
+        SELECT id FROM Messaggi 
+        WHERE conversazione = c.conv_id 
+        ORDER BY istante DESC, id DESC 
+        LIMIT 1
+    )
+    ORDER BY COALESCE(m.istante, '') DESC;`
 
 	rows, err := db.c.Query(query, requesterID, requesterID)
 	if err != nil {
@@ -59,7 +59,8 @@ func (db *appdbimpl) GetMyConversations(requesterID string) ([]ConversationPrevi
 	}
 	defer rows.Close()
 
-	var convs []ConversationPreview
+	// Inizializzato a slice vuoto per serializzare in JSON [] invece di null
+	convs := make([]ConversationPreview, 0)
 
 	for rows.Next() {
 		var c ConversationPreview
@@ -84,15 +85,16 @@ func (db *appdbimpl) GetMyConversations(requesterID string) ([]ConversationPrevi
 
 		c.IsGroup = (isGroupInt == 1)
 
-		// calcolo della preview del messaggio
-		if c.LastMessageDate == "" {
+		// calcolo della preview del messaggio conforme a gocritic
+		switch {
+		case c.LastMessageDate == "":
 			// nessun messaggio scambiato ancora
 			c.LastMessagePreview = ""
-		} else if isDeletedInt == 1 {
+		case isDeletedInt == 1:
 			c.LastMessagePreview = "Questo messaggio è stato eliminato"
-		} else if isImgInt == 1 {
+		case isImgInt == 1:
 			c.LastMessagePreview = "📷 Foto"
-		} else {
+		default:
 			// se troppo lungo si tronca
 			if len(lastContent) > 40 {
 				c.LastMessagePreview = lastContent[:40] + "..."

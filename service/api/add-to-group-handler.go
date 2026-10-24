@@ -29,7 +29,7 @@ func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprou
 	groupID, err := strconv.Atoi(groupIDStr)
 	if err != nil {
 		ctx.Logger.WithError(err).Warning("ID gruppo non valido")
-		w.WriteHeader(http.StatusBadRequest) // 400 se l'id non è un numero intero
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -62,25 +62,26 @@ func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprou
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Errore durante l'aggiunta degli utenti al gruppo")
 
-		// gestione degli errori noti provenienti dal layer database
+		// gestione degli errori noti provenienti dal layer database tramite switch
 		errStr := err.Error()
-		if strings.Contains(errStr, "operazione negata") {
-			// g'utente richiedente non è membro del gruppo
-			w.WriteHeader(http.StatusForbidden) // 403 Forbidden è più appropriato qui, o 401
+		switch {
+		case strings.Contains(errStr, "operazione negata"):
+			// l'utente richiedente non è membro del gruppo
+			w.WriteHeader(http.StatusForbidden)
 			return
-		} else if strings.Contains(errStr, "utente membro non trovato") {
+		case strings.Contains(errStr, "utente membro non trovato"):
 			// uno degli utenti da aggiungere non esiste
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		} else if strings.Contains(errStr, "fa già parte di questo gruppo") {
+		case strings.Contains(errStr, "fa già parte di questo gruppo"):
 			// utenti già presenti
-			w.WriteHeader(http.StatusBadRequest) // O 409 Conflict
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		default:
+			// per tutti gli altri errori, si restituisce 500
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		// per tutti gli altri errori, si restituisce 500
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
 	// successo
